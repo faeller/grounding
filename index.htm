@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grounding Technique</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(to right, #74ebd5, #acb6e5);
+        }
+
+        canvas {
+            border-radius: 10px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+        }
+
+        .button {
+            background-color: #3498db;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        canvas:active .button {
+            box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+            transform: translateY(2px);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="800" height="600"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const WIDTH = 800;
+        const HEIGHT = 600;
+        let state = "deep_breathing";
+
+        class Button {
+            constructor(x, y, width, height, text = null) {
+                this.x = x;
+                this.y = y;
+                this.width = width;
+                this.height = height;
+                this.text = text;
+            }
+
+            is_over(pos) {
+                return this.x < pos.x && pos.x < this.x + this.width && this.y < pos.y && pos.y < this.y + this.height;
+            }
+
+            draw() {
+                ctx.fillStyle = '#3498db';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                if (this.text) {
+                    ctx.font = '36px Arial';
+                    ctx.fillStyle = 'white';
+                    ctx.fillText(this.text, this.x + (this.width / 2) - ctx.measureText(this.text).width / 2, this.y + (this.height / 2) + 12);
+                }
+            }
+        }
+
+        let circle_radius = 50;
+        let growing = true;
+
+        function deep_breathing(next_button) {
+            if (state !== "deep_breathing") return;
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
+            if (growing) {
+                circle_radius += 0.2;
+                if (circle_radius > 100) growing = false;
+            } else {
+                circle_radius -= 0.2;
+                if (circle_radius < 50) growing = true;
+            }
+            ctx.fillStyle = '#3498db';
+            ctx.beginPath();
+            ctx.arc(WIDTH / 2, HEIGHT / 2, circle_radius, 0, 2 * Math.PI);
+            ctx.fill();
+            next_button.draw();
+            requestAnimationFrame(() => deep_breathing(next_button));
+        }
+
+        const prompts = [
+            "Identify 5 things you can see around you.",
+            "Identify 4 things you can touch.",
+            "Identify 3 things you can hear.",
+            "Identify 2 things you can smell.",
+            "Identify 1 thing you can taste."
+        ];
+
+        function grounding_technique(next_button, index = 0) {
+            if (index >= prompts.length) {
+                state = "deep_breathing";
+                deep_breathing(next_button);
+                return;
+            }
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
+            ctx.fillStyle = '#3498db';
+            ctx.font = '36px Arial';
+            ctx.fillText(prompts[index], (WIDTH / 2) - ctx.measureText(prompts[index]).width / 2, HEIGHT / 2);
+            next_button.draw();
+            canvas.onclick = (e) => {
+                if (next_button.is_over({ x: e.offsetX, y: e.offsetY })) {
+                    grounding_technique(next_button, index + 1);
+                }
+            };
+        }
+
+        function main() {
+            const next_button = new Button(WIDTH / 2 - 75, HEIGHT - 100, 150, 50, "Next");
+            canvas.onclick = (e) => {
+                if (next_button.is_over({ x: e.offsetX, y: e.offsetY }) && state === "deep_breathing") {
+                    state = "grounding_technique";
+                    grounding_technique(next_button);
+                }
+            };
+            deep_breathing(next_button);
+        }
+
+        main();
+    </script>
+</body>
+</html>
